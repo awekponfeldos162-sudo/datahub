@@ -10,39 +10,51 @@ async function getWeeklyMetricsForUser(userId) {
   const weekAgo = new Date(now);
   weekAgo.setDate(weekAgo.getDate() - 7);
 
-  const metrics = await prisma.metric.groupBy({
-    by: ['platform'],
-    where: {
-      userId,
-      recordedAt: { gte: weekAgo, lte: now },
-    },
-    _sum: { views: true, likes: true, comments: true, shares: true },
-    _count: { id: true },
-  });
-
   const accounts = await prisma.platformAccount.findMany({
     where: { userId, isActive: true },
-    select: { platform: true, followerCount: true },
+    select: {
+      platform: true,
+      followerCount: true,
+      posts: {
+        select: {
+          metrics: {
+            where: { metricDate: { gte: weekAgo, lte: now } },
+            select: { views: true, likes: true, comments: true, shares: true },
+          },
+        },
+      },
+    },
   });
 
-  const followerMap = Object.fromEntries(accounts.map((a) => [a.platform, a.followerCount]));
+  return accounts
+    .map((account) => {
+      const totals = account.posts.flatMap((p) => p.metrics).reduce(
+        (acc, m) => ({
+          views: acc.views + m.views,
+          likes: acc.likes + m.likes,
+          comments: acc.comments + m.comments,
+          shares: acc.shares + m.shares,
+          count: acc.count + 1,
+        }),
+        { views: 0, likes: 0, comments: 0, shares: 0, count: 0 }
+      );
 
-  return metrics.map((m) => {
-    const totalInteractions = (m._sum.likes || 0) + (m._sum.comments || 0) + (m._sum.shares || 0);
-    const followers = followerMap[m.platform] || 1;
-    const engagementRate = m._count.id > 0
-      ? ((totalInteractions / (m._count.id * followers)) * 100).toFixed(2)
-      : '0.00';
+      const totalInteractions = totals.likes + totals.comments + totals.shares;
+      const followers = account.followerCount || 1;
+      const engagementRate = totals.count > 0
+        ? ((totalInteractions / (totals.count * followers)) * 100).toFixed(2)
+        : '0.00';
 
-    return {
-      platform: m.platform,
-      views: m._sum.views || 0,
-      likes: m._sum.likes || 0,
-      comments: m._sum.comments || 0,
-      shares: m._sum.shares || 0,
-      engagementRate: parseFloat(engagementRate),
-    };
-  });
+      return {
+        platform: account.platform,
+        views: totals.views,
+        likes: totals.likes,
+        comments: totals.comments,
+        shares: totals.shares,
+        engagementRate: parseFloat(engagementRate),
+      };
+    })
+    .filter((r) => r.views > 0 || r.likes > 0);
 }
 
 function startScheduledJobs() {
