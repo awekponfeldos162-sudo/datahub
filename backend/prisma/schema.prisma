@@ -1,0 +1,194 @@
+// DATAhub - Schéma Prisma / PostgreSQL
+// Architecture: users -> platform_accounts -> posts -> metrics | users -> reports
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum Platform {
+  FACEBOOK
+  YOUTUBE
+  INSTAGRAM
+  TIKTOK
+  SNAPCHAT
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+}
+
+enum ReportPeriod {
+  WEEKLY
+  MONTHLY
+  CUSTOM
+}
+
+model User {
+  id                String            @id @default(uuid())
+  email             String            @unique
+  passwordHash      String?           @map("password_hash")
+  fullName          String            @map("full_name")
+  avatar            String?
+  plan              Plan              @default(FREE)
+  emailVerified     Boolean           @default(false) @map("email_verified")
+  verificationToken String?           @map("verification_token")
+  resetToken        String?           @map("reset_token")
+  resetTokenExpiry  DateTime?         @map("reset_token_expiry")
+  mfaEnabled        Boolean           @default(false) @map("mfa_enabled")
+  mfaSecret         String?           @map("mfa_secret")
+  googleId          String?           @unique @map("google_id")
+  facebookId        String?           @unique @map("facebook_id")
+  createdAt         DateTime          @default(now()) @map("created_at")
+  updatedAt         DateTime          @updatedAt @map("updated_at")
+  lastLoginAt       DateTime?         @map("last_login_at")
+
+  platformAccounts  PlatformAccount[]
+  reports           Report[]
+  subscriptions     Subscription[]
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model PlatformAccount {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  platform          Platform
+  platformUserId    String    @map("platform_user_id")
+  platformUsername  String?   @map("platform_username")
+  platformAvatar    String?   @map("platform_avatar")
+  accessTokenEnc    String    @map("access_token_enc")
+  refreshTokenEnc   String?   @map("refresh_token_enc")
+  tokenExpiresAt    DateTime? @map("token_expires_at")
+  scope             String?
+  isActive          Boolean   @default(true) @map("is_active")
+  lastSyncAt        DateTime? @map("last_sync_at")
+  followerCount     Int       @default(0) @map("follower_count")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  posts             Post[]
+
+  @@unique([userId, platform])
+  @@index([userId])
+  @@index([platform])
+  @@map("platform_accounts")
+}
+
+model Post {
+  id                String          @id @default(uuid())
+  platformAccountId String          @map("platform_account_id")
+  platformPostId    String          @map("platform_post_id")
+  type              String
+  title             String?
+  description       String?
+  thumbnailUrl      String?         @map("thumbnail_url")
+  url               String?
+  publishedAt       DateTime        @map("published_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  platformAccount   PlatformAccount @relation(fields: [platformAccountId], references: [id], onDelete: Cascade)
+  metrics           Metric[]
+
+  @@unique([platformAccountId, platformPostId])
+  @@index([platformAccountId])
+  @@index([publishedAt])
+  @@map("posts")
+}
+
+model Metric {
+  id                   String   @id @default(uuid())
+  postId               String   @map("post_id")
+  metricDate           DateTime @map("metric_date") @db.Date
+  views                Int      @default(0)
+  likes                Int      @default(0)
+  comments             Int      @default(0)
+  shares               Int      @default(0)
+  reach                Int      @default(0)
+  engagementRate       Float    @default(0) @map("engagement_rate")
+  watchTimeSeconds     Int      @default(0) @map("watch_time_seconds")
+  impressions          Int      @default(0)
+  saves                Int      @default(0)
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  post                 Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, metricDate])
+  @@index([postId])
+  @@index([metricDate])
+  @@map("metrics")
+}
+
+model Report {
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  title         String
+  periodStart   DateTime     @map("period_start")
+  periodEnd     DateTime     @map("period_end")
+  platforms     Platform[]
+  format        ReportFormat
+  fileUrl       String?      @map("file_url")
+  fileSize      Int?         @map("file_size")
+  status        String       @default("pending")
+  generatedAt   DateTime?    @map("generated_at")
+  createdAt     DateTime     @default(now()) @map("created_at")
+
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("reports")
+}
+
+model Subscription {
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  plan              Plan
+  status            String    @default("active")
+  currentPeriodStart DateTime @map("current_period_start")
+  currentPeriodEnd   DateTime @map("current_period_end")
+  paymentProvider   String?   @map("payment_provider")
+  externalSubId     String?   @map("external_sub_id")
+  amount            Float
+  currency          String    @default("XOF")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  resource  String
+  details   Json?
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

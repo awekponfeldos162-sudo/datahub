@@ -1,0 +1,101 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: datahub_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: datahub
+      POSTGRES_USER: datahub_user
+      POSTGRES_PASSWORD: Planck55
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U datahub_user -d datahub"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres_shadow:
+    image: postgres:17-alpine
+    container_name: datahub_postgres_shadow
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: datahub_shadow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Planck55shadow
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_shadow_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d datahub_shadow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: datahub_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ""
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: datahub_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: postgresql://datahub_user:Planck55@postgres:5432/datahub?schema=public
+      SHADOW_DATABASE_URL: postgresql://postgres:Planck55shadow@postgres_shadow:5432/datahub_shadow?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-datahub-super-secret-jwt-key-dev-minimum-32-chars-ok}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-datahub-refresh-secret-dev-minimum-32-chars-ok!!}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-4f3c2a1b9e8d7f6a5b4c3d2e1f0a9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2}
+      FRONTEND_URL: http://localhost:3000
+      APP_URL: http://localhost:5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend_logs:/app/logs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: datahub_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:
+  postgres_shadow_data:
+  redis_data:
+  backend_logs:

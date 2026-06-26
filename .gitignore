@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment files — NE JAMAIS COMMITTER
+backend/.env
+backend/.env.local
+backend/.env.production
+frontend/.env
+frontend/.env.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Prisma
+backend/prisma/migrations/**/*.lock
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+
+# Docker
+.dockerignore
+
+# PM2
+.pm2/
+
+# SSL / Secrets
+*.pem
+*.key
+*.crt
