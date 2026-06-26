@@ -15,6 +15,9 @@ import Heatmap from './pages/Heatmap';
 import Admin from './pages/Admin';
 import AuthCallback from './pages/AuthCallback';
 import PaymentCallback from './pages/PaymentCallback';
+import ResetPassword from './pages/ResetPassword';
+import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
 import NotFound from './pages/NotFound';
 
 function PrivateRoute({ children }) {
@@ -35,11 +38,14 @@ export default function App() {
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
-        {/* OAuth + payment callbacks — no auth required */}
+        {/* Auth & payment callbacks */}
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/payment/callback" element={<PaymentCallback />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-        {/* Pricing accessible without auth but also within app */}
+        {/* Pricing accessible without auth */}
         <Route path="/pricing" element={<Pricing />} />
 
         <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>

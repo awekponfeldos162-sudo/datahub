@@ -60,7 +60,7 @@ export default function Login() {
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-slate-50">
+      <div className="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
         <div className="w-full max-w-md">
           <div className="card p-8">
             <div className="mb-8">
