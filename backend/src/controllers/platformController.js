@@ -143,10 +143,22 @@ async function syncPlatform(req, res, next) {
       }
     }
 
-    await prisma.platformAccount.update({
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const updatedAccount = await prisma.platformAccount.update({
       where: { id: account.id },
       data: { lastSyncAt: new Date() },
     });
+
+    // Save follower snapshot for growth rate tracking
+    if (updatedAccount.followerCount > 0) {
+      await prisma.followerSnapshot.upsert({
+        where: { platformAccountId_snapshotDate: { platformAccountId: account.id, snapshotDate: today } },
+        update: { followerCount: updatedAccount.followerCount },
+        create: { platformAccountId: account.id, followerCount: updatedAccount.followerCount, snapshotDate: today },
+      });
+    }
 
     await cacheDel(`user:${req.user.id}:metrics:*`);
 

@@ -40,10 +40,17 @@ export default function Reports() {
     if (new Date(form.periodStart) >= new Date(form.periodEnd)) {
       return toast.error('La date de début doit être antérieure à la date de fin');
     }
+    if (form.platforms.length === 0) {
+      return toast.error('Sélectionnez au moins une plateforme');
+    }
 
     setGenerating(true);
     try {
-      const blob = await reportsApi.generate(form);
+      const blob = await reportsApi.generate({
+        ...form,
+        periodStart: new Date(form.periodStart).toISOString(),
+        periodEnd: new Date(form.periodEnd).toISOString(),
+      });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -65,22 +72,23 @@ export default function Reports() {
         {/* Generator form */}
         <div className="lg:col-span-1">
           <div className="card p-6">
-            <h3 className="text-base font-semibold text-slate-900 mb-4 flex items-center gap-2">
-              <Plus size={16} /> Nouveau rapport
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+              <Plus size={16} aria-hidden="true" /> Nouveau rapport
             </h3>
 
             {!canGenerate ? (
               <div className="text-center py-8">
-                <Lock size={32} className="text-slate-300 mx-auto mb-3" />
-                <p className="text-sm text-slate-600 font-medium mb-1">Plan payant requis</p>
-                <p className="text-xs text-slate-400 mb-4">Les rapports sont disponibles à partir du plan Starter.</p>
+                <Lock size={32} className="text-slate-300 dark:text-slate-600 mx-auto mb-3" aria-hidden="true" />
+                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium mb-1">Plan payant requis</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mb-4">Les rapports sont disponibles à partir du plan Starter.</p>
                 <a href="/pricing" className="btn-primary text-xs">Mettre à niveau</a>
               </div>
             ) : (
-              <form onSubmit={handleGenerate} className="space-y-4">
+              <form onSubmit={handleGenerate} className="space-y-4" aria-label="Formulaire de génération de rapport">
                 <div>
-                  <label className="label">Titre du rapport</label>
+                  <label htmlFor="report-title" className="label">Titre du rapport</label>
                   <input
+                    id="report-title"
                     type="text"
                     className="input"
                     placeholder="Rapport mensuel juin 2025"
@@ -92,8 +100,9 @@ export default function Reports() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="label">Date début</label>
+                    <label htmlFor="period-start" className="label">Date début</label>
                     <input
+                      id="period-start"
                       type="date"
                       className="input"
                       value={form.periodStart}
@@ -102,8 +111,9 @@ export default function Reports() {
                     />
                   </div>
                   <div>
-                    <label className="label">Date fin</label>
+                    <label htmlFor="period-end" className="label">Date fin</label>
                     <input
+                      id="period-end"
                       type="date"
                       className="input"
                       value={form.periodEnd}
@@ -113,56 +123,58 @@ export default function Reports() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="label">Plateformes</label>
-                  <div className="flex flex-wrap gap-2">
+                <fieldset>
+                  <legend className="label">Plateformes</legend>
+                  <div className="flex flex-wrap gap-2 mt-1">
                     {PLATFORMS.map((p) => (
                       <button
                         key={p}
                         type="button"
+                        aria-pressed={form.platforms.includes(p)}
                         onClick={() => togglePlatform(p)}
                         className={`badge cursor-pointer transition-all ${
                           form.platforms.includes(p)
-                            ? 'bg-primary-800 text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-primary-800 text-white dark:bg-primary-600'
+                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                         }`}
                       >
                         {p}
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">Laisser vide = toutes les plateformes</p>
-                </div>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Sélectionnez une ou plusieurs plateformes</p>
+                </fieldset>
 
-                <div>
-                  <label className="label">Format</label>
-                  <div className="flex gap-2">
+                <fieldset>
+                  <legend className="label">Format</legend>
+                  <div className="flex gap-2 mt-1">
                     {['PDF', 'EXCEL'].map((f) => (
                       <button
                         key={f}
                         type="button"
+                        aria-pressed={form.format === f}
                         onClick={() => setForm({ ...form, format: f })}
                         className={`flex-1 py-2 text-sm rounded-lg border transition-all ${
                           form.format === f
-                            ? 'bg-primary-800 text-white border-primary-800'
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                            ? 'bg-primary-800 dark:bg-primary-600 text-white border-primary-800 dark:border-primary-600'
+                            : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-slate-300'
                         }`}
                       >
                         {f}
                       </button>
                     ))}
                   </div>
-                </div>
+                </fieldset>
 
                 <button type="submit" disabled={generating} className="btn-primary w-full py-3">
                   {generating ? (
                     <span className="flex items-center gap-2">
-                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
                       Génération en cours...
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
-                      <Download size={14} />
+                      <Download size={14} aria-hidden="true" />
                       Générer et télécharger
                     </span>
                   )}
@@ -175,42 +187,44 @@ export default function Reports() {
         {/* History */}
         <div className="lg:col-span-2">
           <div className="card">
-            <div className="px-6 py-4 border-b border-slate-100">
-              <h3 className="text-base font-semibold text-slate-900">Historique des rapports</h3>
+            <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">Historique des rapports</h3>
             </div>
 
             {(!history || history.length === 0) ? (
-              <div className="py-16 text-center text-slate-400">
-                <FileText size={36} className="mx-auto mb-3 opacity-30" />
+              <div className="py-16 text-center text-slate-400 dark:text-slate-500">
+                <FileText size={36} className="mx-auto mb-3 opacity-30" aria-hidden="true" />
                 <p>Aucun rapport généré</p>
               </div>
             ) : (
-              <div className="divide-y divide-slate-50">
+              <div className="divide-y divide-slate-50 dark:divide-slate-700/50" role="list" aria-label="Historique des rapports">
                 {history.map((report) => (
-                  <div key={report.id} className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors">
+                  <div key={report.id} role="listitem" className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
-                      report.format === 'PDF' ? 'bg-red-50' : 'bg-green-50'
-                    }`}>
+                      report.format === 'PDF' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'
+                    }`} aria-hidden="true">
                       <FileText size={18} className={report.format === 'PDF' ? 'text-red-600' : 'text-green-600'} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{report.title}</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{report.title}</p>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                          <Calendar size={10} />
+                        <span className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                          <Calendar size={10} aria-hidden="true" />
                           {new Date(report.periodStart).toLocaleDateString('fr-FR')} — {new Date(report.periodEnd).toLocaleDateString('fr-FR')}
                         </span>
-                        <span className={`badge ${report.format === 'PDF' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                        <span className={`badge ${report.format === 'PDF' ? 'bg-red-50 dark:bg-red-900/20 text-red-600' : 'bg-green-50 dark:bg-green-900/20 text-green-600'}`}>
                           {report.format}
                         </span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs text-slate-400">
+                      <p className="text-xs text-slate-400 dark:text-slate-500">
                         {new Date(report.createdAt).toLocaleDateString('fr-FR')}
                       </p>
                       <span className={`badge text-[10px] mt-1 ${
-                        report.status === 'completed' ? 'bg-green-50 text-green-700' : 'bg-yellow-50 text-yellow-700'
+                        report.status === 'completed'
+                          ? 'bg-green-50 dark:bg-green-900/20 text-green-700'
+                          : 'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700'
                       }`}>
                         {report.status === 'completed' ? 'Terminé' : 'En cours'}
                       </span>

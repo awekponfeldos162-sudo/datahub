@@ -83,6 +83,7 @@ model PlatformAccount {
 
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   posts             Post[]
+  followerSnapshots FollowerSnapshot[]
 
   @@unique([userId, platform])
   @@index([userId])
@@ -174,6 +175,21 @@ model Subscription {
 
   @@index([userId])
   @@map("subscriptions")
+}
+
+model FollowerSnapshot {
+  id                String          @id @default(uuid())
+  platformAccountId String          @map("platform_account_id")
+  followerCount     Int             @map("follower_count")
+  snapshotDate      DateTime        @map("snapshot_date") @db.Date
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  platformAccount   PlatformAccount @relation(fields: [platformAccountId], references: [id], onDelete: Cascade)
+
+  @@unique([platformAccountId, snapshotDate])
+  @@index([platformAccountId])
+  @@index([snapshotDate])
+  @@map("follower_snapshots")
 }
 
 model AuditLog {

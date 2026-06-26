@@ -85,6 +85,16 @@ export const insightsApi = {
 export const paymentApi = {
   getPlans: () => api.get('/payment/plans'),
   initialize: (data) => api.post('/payment/initialize', data),
+  initializeCinetPay: (data) => api.post('/payment/initialize-cinetpay', data),
+};
+
+export const adminApi = {
+  getStats: () => api.get('/admin/stats'),
+  getUsers: (params) => api.get('/admin/users', { params }),
+  updateUserPlan: (id, plan) => api.patch(`/admin/users/${id}/plan`, { plan }),
+  updateUserStatus: (id, active) => api.patch(`/admin/users/${id}/status`, { active }),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
+  getAuditLogs: (params) => api.get('/admin/audit-logs', { params }),
 };
 
 export default api;

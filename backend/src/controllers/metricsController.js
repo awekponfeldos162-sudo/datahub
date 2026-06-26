@@ -13,19 +13,31 @@ async function getDashboardOverview(req, res, next) {
     if (cached) return res.json({ success: true, data: cached, cached: true });
 
     const since = getPeriodDate(period);
+    // Previous period for variation calculation
+    const days = { '7d': 7, '14d': 14, '30d': 30, '90d': 90, '180d': 180, '365d': 365 };
+    const daysCount = days[period] || 30;
+    const prevSince = new Date(since);
+    prevSince.setDate(prevSince.getDate() - daysCount);
+    const prevEnd = new Date(since);
 
-    const accounts = await prisma.platformAccount.findMany({
-      where: { userId, isActive: true },
-      include: {
-        posts: {
-          include: {
-            metrics: {
-              where: { metricDate: { gte: since } },
-            },
+    const [accounts, prevAccounts] = await Promise.all([
+      prisma.platformAccount.findMany({
+        where: { userId, isActive: true },
+        include: {
+          posts: {
+            include: { metrics: { where: { metricDate: { gte: since } } } },
           },
         },
-      },
-    });
+      }),
+      prisma.platformAccount.findMany({
+        where: { userId, isActive: true },
+        include: {
+          posts: {
+            include: { metrics: { where: { metricDate: { gte: prevSince, lt: prevEnd } } } },
+          },
+        },
+      }),
+    ]);
 
     const overview = {
       totalPlatforms: accounts.length,
@@ -87,6 +99,27 @@ async function getDashboardOverview(req, res, next) {
       ).toFixed(2);
     }
 
+    // Calculate previous period totals for variation %
+    let prevViews = 0, prevLikes = 0, prevComments = 0, prevShares = 0;
+    for (const account of prevAccounts) {
+      for (const post of account.posts) {
+        for (const metric of post.metrics) {
+          prevViews += metric.views;
+          prevLikes += metric.likes;
+          prevComments += metric.comments;
+          prevShares += metric.shares;
+        }
+      }
+    }
+
+    const pct = (curr, prev) => prev === 0 ? (curr > 0 ? 100 : 0) : Math.round(((curr - prev) / prev) * 100);
+    overview.variations = {
+      views: pct(overview.totalViews, prevViews),
+      likes: pct(overview.totalLikes, prevLikes),
+      comments: pct(overview.totalComments, prevComments),
+      shares: pct(overview.totalShares, prevShares),
+    };
+
     await cacheSet(cacheKey, overview, 300);
     res.json({ success: true, data: overview });
   } catch (error) {
@@ -111,7 +144,12 @@ async function getPlatformMetrics(req, res, next) {
       return res.status(404).json({ success: false, message: 'Plateforme non connectée' });
     }
 
-    const [posts, totalCount] = await Promise.all([
+    const daysN = { '7d': 7, '14d': 14, '30d': 30, '90d': 90, '180d': 180, '365d': 365 };
+    const daysCount = daysN[period] || 30;
+    const prevSince = new Date(since);
+    prevSince.setDate(prevSince.getDate() - daysCount);
+
+    const [posts, totalCount, oldSnapshot] = await Promise.all([
       prisma.post.findMany({
         where: { platformAccountId: account.id, publishedAt: { gte: since } },
         include: {
@@ -126,6 +164,10 @@ async function getPlatformMetrics(req, res, next) {
       }),
       prisma.post.count({
         where: { platformAccountId: account.id, publishedAt: { gte: since } },
+      }),
+      prisma.followerSnapshot.findFirst({
+        where: { platformAccountId: account.id, snapshotDate: { gte: prevSince, lt: since } },
+        orderBy: { snapshotDate: 'asc' },
       }),
     ]);
 
@@ -146,6 +188,14 @@ async function getPlatformMetrics(req, res, next) {
       return { ...post, totals, engagementRate };
     });
 
+    const currentFollowers = account.followerCount;
+    let followerGrowthRate = null;
+    if (oldSnapshot && oldSnapshot.followerCount > 0) {
+      followerGrowthRate = Math.round(
+        ((currentFollowers - oldSnapshot.followerCount) / oldSnapshot.followerCount) * 100
+      );
+    }
+
     res.json({
       success: true,
       data: {
@@ -153,7 +203,8 @@ async function getPlatformMetrics(req, res, next) {
           platform: account.platform,
           username: account.platformUsername,
           avatar: account.platformAvatar,
-          followers: account.followerCount,
+          followers: currentFollowers,
+          followerGrowthRate,
           lastSync: account.lastSyncAt,
         },
         posts: postsWithTotals,

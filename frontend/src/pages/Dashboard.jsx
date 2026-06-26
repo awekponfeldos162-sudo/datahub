@@ -69,10 +69,10 @@ export default function Dashboard() {
     <div className="space-y-6 animate-fade-in">
       {/* Stats cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard title="Vues totales" value={overview.totalViews} icon={Eye} color="blue" delay={0} />
-        <StatsCard title="Likes" value={overview.totalLikes} icon={Heart} color="red" delay={0.05} />
-        <StatsCard title="Commentaires" value={overview.totalComments} icon={MessageCircle} color="purple" delay={0.1} />
-        <StatsCard title="Partages" value={overview.totalShares} icon={Share2} color="green" delay={0.15} />
+        <StatsCard title="Vues totales" value={overview.totalViews} icon={Eye} color="blue" delay={0} change={overview.variations?.views} changeLabel="vs période préc." />
+        <StatsCard title="Likes" value={overview.totalLikes} icon={Heart} color="red" delay={0.05} change={overview.variations?.likes} changeLabel="vs période préc." />
+        <StatsCard title="Commentaires" value={overview.totalComments} icon={MessageCircle} color="purple" delay={0.1} change={overview.variations?.comments} changeLabel="vs période préc." />
+        <StatsCard title="Partages" value={overview.totalShares} icon={Share2} color="green" delay={0.15} change={overview.variations?.shares} changeLabel="vs période préc." />
         <StatsCard title="Abonnés totaux" value={overview.totalFollowers} icon={Users} color="teal" delay={0.2} />
         <StatsCard title="Publications" value={overview.totalPosts} icon={TrendingUp} color="orange" delay={0.25} />
         <StatsCard title="Engagement moyen" value={`${overview.avgEngagementRate}%`} icon={TrendingUp} color="blue" delay={0.3} />

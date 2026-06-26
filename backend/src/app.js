@@ -6,6 +6,8 @@ const compression = require('compression');
 const passport = require('passport');
 
 require('./config/passport');
+const { Sentry, initSentry } = require('./config/sentry');
+initSentry();
 
 const { globalRateLimiter } = require('./middleware/rateLimiter');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
@@ -71,6 +73,10 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/payment', paymentRoutes);
 
 app.use(notFoundHandler);
+
+if (process.env.SENTRY_DSN) {
+  app.use(Sentry.expressErrorHandler());
+}
 app.use(errorHandler);
 
 module.exports = app;

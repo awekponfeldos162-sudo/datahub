@@ -4,36 +4,52 @@
 
 @layer base {
   * { box-sizing: border-box; }
+  html { color-scheme: light dark; }
   body {
-    @apply font-sans antialiased bg-slate-50 text-slate-900;
+    @apply font-sans antialiased bg-slate-50 text-slate-900 transition-colors duration-200;
   }
   .dark body {
-    @apply bg-slate-950 text-slate-50;
+    @apply bg-slate-950 text-slate-100;
   }
 }
 
 @layer components {
+  /* ─── Buttons ─────────────────────────────────────── */
   .btn {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
   }
   .btn-primary {
-    @apply btn bg-primary-800 text-white hover:bg-primary-900 focus:ring-primary-500;
+    @apply btn bg-primary-800 text-white hover:bg-primary-900 focus:ring-primary-500
+           dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-offset-slate-900;
   }
   .btn-secondary {
-    @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 focus:ring-slate-300;
+    @apply btn bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 focus:ring-slate-300
+           dark:bg-slate-800 dark:text-slate-200 dark:border-slate-600 dark:hover:bg-slate-700 dark:focus:ring-slate-600 dark:focus:ring-offset-slate-900;
   }
   .btn-danger {
-    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply btn bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:focus:ring-offset-slate-900;
   }
+
+  /* ─── Cards ───────────────────────────────────────── */
   .card {
-    @apply bg-white rounded-xl border border-slate-200 shadow-sm;
+    @apply bg-white rounded-xl border border-slate-200 shadow-sm
+           dark:bg-slate-900 dark:border-slate-700 dark:shadow-slate-900/50;
   }
+
+  /* ─── Forms ───────────────────────────────────────── */
   .input {
-    @apply w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent placeholder:text-slate-400 transition-all;
+    @apply w-full px-3 py-2 text-sm border border-slate-300 rounded-lg
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           placeholder:text-slate-400 transition-all
+           bg-white text-slate-900
+           dark:bg-slate-800 dark:border-slate-600 dark:text-slate-100 dark:placeholder:text-slate-500
+           dark:focus:ring-primary-400 dark:focus:ring-offset-slate-900;
   }
   .label {
-    @apply block text-sm font-medium text-slate-700 mb-1;
+    @apply block text-sm font-medium text-slate-700 mb-1 dark:text-slate-300;
   }
+
+  /* ─── Misc ────────────────────────────────────────── */
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
   }
@@ -53,21 +69,43 @@
     scrollbar-width: thin;
     scrollbar-color: #cbd5e1 transparent;
   }
+  .dark .scrollbar-thin {
+    scrollbar-color: #475569 transparent;
+  }
 }
 
-/* Chart.js responsive */
-canvas { max-width: 100%; }
-
-/* Recharts */
+/* ─── Recharts dark mode ─────────────────────────── */
 .recharts-cartesian-axis-tick text {
   @apply fill-slate-500 text-xs;
+}
+.dark .recharts-cartesian-axis-tick text {
+  fill: #94a3b8;
 }
 .recharts-legend-item-text {
   @apply text-slate-600 !important;
 }
+.dark .recharts-legend-item-text {
+  color: #94a3b8 !important;
+}
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  @apply !bg-white !border-slate-200 !shadow-lg;
+}
+.dark .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
 
-/* Scrollbar */
+/* ─── Select dark mode ───────────────────────────── */
+.dark select option {
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* ─── Scrollbar ──────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+canvas { max-width: 100%; }

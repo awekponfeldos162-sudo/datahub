@@ -4,12 +4,12 @@ import clsx from 'clsx';
 
 export default function StatsCard({ title, value, icon: Icon, change, changeLabel, color = 'blue', delay = 0 }) {
   const colorMap = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    purple: 'bg-purple-50 text-purple-600',
-    orange: 'bg-orange-50 text-orange-600',
-    red: 'bg-red-50 text-red-600',
-    teal: 'bg-teal-50 text-teal-600',
+    blue: 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400',
+    green: 'bg-green-50 dark:bg-green-950 text-green-600 dark:text-green-400',
+    purple: 'bg-purple-50 dark:bg-purple-950 text-purple-600 dark:text-purple-400',
+    orange: 'bg-orange-50 dark:bg-orange-950 text-orange-600 dark:text-orange-400',
+    red: 'bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400',
+    teal: 'bg-teal-50 dark:bg-teal-950 text-teal-600 dark:text-teal-400',
   };
 
   const isPositive = change > 0;
@@ -24,8 +24,8 @@ export default function StatsCard({ title, value, icon: Icon, change, changeLabe
     >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm text-slate-500 font-medium">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">
+          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{title}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-slate-100 mt-1">
             {typeof value === 'number' ? value.toLocaleString('fr-FR') : value}
           </p>
           {change !== undefined && (
