@@ -53,19 +53,19 @@ export default function EngagementHeatmap({ data = [], title = 'Heatmap d\'engag
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">{title}</h3>
         {exportable && (
-          <button onClick={handleExport} className="btn-secondary py-1.5 px-3 text-xs gap-1.5">
-            <Download size={12} /> PNG
+          <button onClick={handleExport} className="btn-secondary py-1.5 px-3 text-xs gap-1.5" aria-label="Exporter la heatmap en PNG">
+            <Download size={12} aria-hidden="true" /> PNG
           </button>
         )}
       </div>
-      <div ref={ref} className="overflow-x-auto">
+      <div ref={ref} className="overflow-x-auto bg-white dark:bg-slate-900 rounded-lg">
         <div className="min-w-[680px]">
           {/* Hour labels */}
           <div className="flex ml-10 mb-1">
             {HOURS.map((h, i) => (
-              <div key={h} className="flex-1 text-center text-[9px] text-slate-400 font-mono">
+              <div key={h} className="flex-1 text-center text-[9px] text-slate-400 dark:text-slate-500 font-mono">
                 {i % 3 === 0 ? h : ''}
               </div>
             ))}
@@ -73,15 +73,17 @@ export default function EngagementHeatmap({ data = [], title = 'Heatmap d\'engag
           {/* Grid */}
           {DAYS.map((day, dayIdx) => (
             <div key={day} className="flex items-center mb-0.5 gap-0.5">
-              <div className="w-10 text-xs text-slate-500 shrink-0">{day}</div>
+              <div className="w-10 text-xs text-slate-500 dark:text-slate-400 shrink-0">{day}</div>
               {grid[dayIdx].map((value, hour) => (
                 <div
                   key={hour}
                   title={`${day} ${HOURS[hour]}: ${value.toLocaleString()} engagements`}
+                  role="gridcell"
+                  aria-label={`${day} ${HOURS[hour]}: ${value.toLocaleString()}`}
                   className={`flex-1 h-6 rounded-sm flex items-center justify-center cursor-default transition-transform hover:scale-110 ${getColor(value, maxValue)}`}
                 >
                   {value > 0 && maxValue > 0 && value / maxValue > 0.7 && (
-                    <span className={`text-[9px] font-bold ${getTextColor(value, maxValue)}`}>
+                    <span className={`text-[9px] font-bold ${getTextColor(value, maxValue)}`} aria-hidden="true">
                       {value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
                     </span>
                   )}
@@ -90,12 +92,12 @@ export default function EngagementHeatmap({ data = [], title = 'Heatmap d\'engag
             </div>
           ))}
           {/* Legend */}
-          <div className="flex items-center gap-1.5 mt-3">
-            <span className="text-[10px] text-slate-400">Faible</span>
-            {['bg-slate-100', 'bg-primary-100', 'bg-primary-200', 'bg-primary-400', 'bg-primary-600', 'bg-primary-800'].map((c) => (
-              <div key={c} className={`w-5 h-3 rounded-sm ${c}`} />
+          <div className="flex items-center gap-1.5 mt-3" aria-label="Légende de la heatmap">
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">Faible</span>
+            {['bg-slate-100 dark:bg-slate-700', 'bg-primary-100', 'bg-primary-200', 'bg-primary-400', 'bg-primary-600', 'bg-primary-800'].map((c) => (
+              <div key={c} className={`w-5 h-3 rounded-sm ${c}`} aria-hidden="true" />
             ))}
-            <span className="text-[10px] text-slate-400">Élevé</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">Élevé</span>
           </div>
         </div>
       </div>
