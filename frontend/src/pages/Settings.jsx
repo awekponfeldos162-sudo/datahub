@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { platformsApi, authApi } from '../api/client';
 import { useAuthStore } from '../store/useStore';
@@ -31,6 +31,32 @@ export default function Settings() {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [showDelete, setShowDelete] = useState(false);
 
+  // Lire le retour OAuth depuis l'URL (?connected=YOUTUBE ou ?error=...)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const connected = params.get('connected');
+    const error = params.get('error');
+    if (connected) {
+      toast.success(`${connected} connecté avec succès !`);
+      qc.invalidateQueries(['platforms']);
+      window.history.replaceState({}, '', '/settings');
+    } else if (error) {
+      const errorMessages = {
+        access_denied: 'Connexion refusée par Google',
+        no_channel: 'Aucune chaîne YouTube trouvée sur ce compte',
+        invalid_token: 'Session expirée, reconnectez-vous',
+        youtube_not_configured: 'YouTube API non configurée côté serveur',
+        oauth_failed: 'Erreur lors de la connexion OAuth',
+        no_token: 'Token manquant',
+        missing_params: 'Paramètres manquants',
+        invalid_state: 'État OAuth invalide',
+        oauth_init_failed: 'Erreur d\'initialisation OAuth',
+      };
+      toast.error(errorMessages[error] || `Erreur OAuth: ${error}`);
+      window.history.replaceState({}, '', '/settings');
+    }
+  }, []);
+
   const { data: platforms } = useQuery({
     queryKey: ['platforms'],
     queryFn: () => platformsApi.getAll().then((r) => r.data),
@@ -56,8 +82,10 @@ export default function Settings() {
   });
 
   const handleOAuth = (platformId) => {
+    const token = useAuthStore.getState().accessToken;
+    if (!token) return toast.error('Session expirée. Reconnectez-vous.');
     toast('Redirection vers OAuth...');
-    window.location.href = `/api/auth/${platformId.toLowerCase()}`;
+    window.location.href = `/api/auth/${platformId.toLowerCase()}?token=${token}`;
   };
 
   const handleSaveProfile = async (e) => {
