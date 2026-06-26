@@ -58,11 +58,13 @@ export default function Sidebar({ connectedPlatforms = [] }) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin" aria-label="Navigation principale">
         {NAV_ITEMS.filter(({ adminOnly }) => !adminOnly || user?.plan === 'ENTERPRISE').map(({ to, icon: Icon, label }) => (
           <Link
             key={to}
             to={to}
+            aria-label={label}
+            aria-current={isActive(to) ? 'page' : undefined}
             className={clsx(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all group',
               isActive(to)
@@ -71,7 +73,7 @@ export default function Sidebar({ connectedPlatforms = [] }) {
             )}
             title={!sidebarOpen ? label : undefined}
           >
-            <Icon size={18} className="shrink-0" />
+            <Icon size={18} className="shrink-0" aria-hidden="true" />
             <AnimatePresence>
               {sidebarOpen && (
                 <motion.span initial={{ opacity: 0, x: -5 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -5 }}>
@@ -138,8 +140,8 @@ export default function Sidebar({ connectedPlatforms = [] }) {
             )}
           </AnimatePresence>
           {sidebarOpen && (
-            <button onClick={logout} className="text-primary-400 hover:text-white transition-colors" title="Déconnexion">
-              <LogOut size={16} />
+            <button onClick={logout} aria-label="Déconnexion" className="text-primary-400 hover:text-white transition-colors" title="Déconnexion">
+              <LogOut size={16} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -148,9 +150,11 @@ export default function Sidebar({ connectedPlatforms = [] }) {
       {/* Toggle */}
       <button
         onClick={toggleSidebar}
+        aria-label={sidebarOpen ? 'Réduire la barre latérale' : 'Développer la barre latérale'}
+        aria-expanded={sidebarOpen}
         className="absolute -right-3 top-20 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-shadow"
       >
-        {sidebarOpen ? <ChevronLeft size={12} className="text-slate-600" /> : <ChevronRight size={12} className="text-slate-600" />}
+        {sidebarOpen ? <ChevronLeft size={12} className="text-slate-600" aria-hidden="true" /> : <ChevronRight size={12} className="text-slate-600" aria-hidden="true" />}
       </button>
     </motion.aside>
   );

@@ -28,16 +28,24 @@ export const useAuthStore = create(
   )
 );
 
-export const useUIStore = create((set) => ({
-  sidebarOpen: true,
-  darkMode: false,
-  activePeriod: '30d',
+export const useUIStore = create(
+  persist(
+    (set) => ({
+      sidebarOpen: true,
+      darkMode: false,
+      activePeriod: '30d',
 
-  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-  toggleDarkMode: () => set((state) => {
-    const dark = !state.darkMode;
-    document.documentElement.classList.toggle('dark', dark);
-    return { darkMode: dark };
-  }),
-  setActivePeriod: (period) => set({ activePeriod: period }),
-}));
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+      toggleDarkMode: () => set((state) => {
+        const dark = !state.darkMode;
+        document.documentElement.classList.toggle('dark', dark);
+        return { darkMode: dark };
+      }),
+      setActivePeriod: (period) => set({ activePeriod: period }),
+    }),
+    {
+      name: 'datahub-ui',
+      partialize: (state) => ({ darkMode: state.darkMode, sidebarOpen: state.sidebarOpen }),
+    }
+  )
+);

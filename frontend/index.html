@@ -9,6 +9,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <title>DATAhub — Analyse Multi-Réseaux Sociaux</title>
+
+    <!-- Apply dark mode immediately from localStorage to prevent flash of wrong theme -->
+    <script>
+      (function () {
+        try {
+          var stored = JSON.parse(localStorage.getItem('datahub-ui') || '{}');
+          if (stored.state && stored.state.darkMode) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
