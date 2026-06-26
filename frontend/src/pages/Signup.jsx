@@ -58,48 +58,55 @@ export default function Signup() {
         </div>
 
         <div className="card p-8">
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire de création de compte">
             <div>
-              <label className="label">Nom complet</label>
+              <label htmlFor="signup-name" className="label">Nom complet</label>
               <input
+                id="signup-name"
                 type="text"
                 className="input"
                 placeholder="Jean Dupont"
                 value={form.fullName}
                 onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                 required
+                autoComplete="name"
               />
             </div>
 
             <div>
-              <label className="label">Adresse email</label>
+              <label htmlFor="signup-email" className="label">Adresse email</label>
               <input
+                id="signup-email"
                 type="email"
                 className="input"
                 placeholder="vous@exemple.com"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 required
+                autoComplete="email"
               />
             </div>
 
             <div>
-              <label className="label">Mot de passe</label>
+              <label htmlFor="signup-password" className="label">Mot de passe</label>
               <div className="relative">
                 <input
+                  id="signup-password"
                   type={showPass ? 'text' : 'password'}
                   className="input pr-10"
                   placeholder="Minimum 8 caractères"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   required
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
+                  aria-label={showPass ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   onClick={() => setShowPass(!showPass)}
                   className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                 >
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPass ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
                 </button>
               </div>
               {form.password && (
