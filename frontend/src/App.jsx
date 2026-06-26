@@ -13,6 +13,9 @@ import Settings from './pages/Settings';
 import Pricing from './pages/Pricing';
 import Heatmap from './pages/Heatmap';
 import Admin from './pages/Admin';
+import AuthCallback from './pages/AuthCallback';
+import PaymentCallback from './pages/PaymentCallback';
+import NotFound from './pages/NotFound';
 
 function PrivateRoute({ children }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -29,9 +32,15 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/pricing" element={<Pricing />} />
         <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+
+        {/* OAuth + payment callbacks — no auth required */}
+        <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/payment/callback" element={<PaymentCallback />} />
+
+        {/* Pricing accessible without auth but also within app */}
+        <Route path="/pricing" element={<Pricing />} />
 
         <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route path="dashboard" element={<Dashboard />} />
@@ -44,7 +53,7 @@ export default function App() {
           <Route path="admin" element={<Admin />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
   );
