@@ -68,51 +68,56 @@ export default function Login() {
               <p className="text-slate-500 mt-1 text-sm">Bienvenue sur DATAhub</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-5" aria-label="Formulaire de connexion">
               <div>
-                <label className="label">Adresse email</label>
+                <label htmlFor="login-email" className="label">Adresse email</label>
                 <input
+                  id="login-email"
                   type="email"
                   className="input"
                   placeholder="vous@exemple.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   required
+                  autoComplete="email"
                 />
               </div>
 
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="label mb-0">Mot de passe</label>
+                  <label htmlFor="login-password" className="label mb-0">Mot de passe</label>
                   <Link to="/forgot-password" className="text-xs text-primary-800 hover:underline">
                     Mot de passe oublié ?
                   </Link>
                 </div>
                 <div className="relative">
                   <input
+                    id="login-password"
                     type={showPass ? 'text' : 'password'}
                     className="input pr-10"
                     placeholder="••••••••"
                     value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                     required
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
+                    aria-label={showPass ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                     onClick={() => setShowPass(!showPass)}
                     className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
                   >
-                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                    {showPass ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
                   </button>
                 </div>
               </div>
 
               <button type="submit" disabled={loading} className="btn-primary w-full py-3">
                 {loading ? (
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" aria-hidden="true" />
                 ) : (
                   <>
-                    <LogIn size={16} />
+                    <LogIn size={16} aria-hidden="true" />
                     Se connecter
                   </>
                 )}
