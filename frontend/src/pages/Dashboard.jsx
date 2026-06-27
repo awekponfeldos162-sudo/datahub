@@ -7,6 +7,7 @@ import {
   Eye, Heart, MessageCircle, Share2, Users, TrendingUp,
   RefreshCw, Plus, AlertCircle, Facebook, Youtube, Instagram, Music2, Ghost,
 } from 'lucide-react';
+import PinterestIcon from '../components/icons/PinterestIcon';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend,
@@ -21,11 +22,12 @@ const PLATFORM_COLORS = {
   INSTAGRAM: '#e1306c',
   TIKTOK: '#010101',
   SNAPCHAT: '#fffc00',
+  PINTEREST: '#e60023',
 };
 
 const PLATFORM_ICONS = {
   FACEBOOK: Facebook, YOUTUBE: Youtube, INSTAGRAM: Instagram,
-  TIKTOK: Music2, SNAPCHAT: Ghost,
+  TIKTOK: Music2, SNAPCHAT: Ghost, PINTEREST: PinterestIcon,
 };
 
 export default function Dashboard() {

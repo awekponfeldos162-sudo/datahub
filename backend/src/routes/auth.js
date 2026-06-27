@@ -11,6 +11,7 @@ const { authLimiter } = require('../middleware/rateLimiter');
 const { validate, schemas } = require('../middleware/validate');
 const { encrypt } = require('../services/cryptoService');
 const youtubeService = require('../services/youtubeService');
+const pinterestService = require('../services/pinterestService');
 const { logger } = require('../utils/logger');
 
 const prisma = new PrismaClient();
@@ -148,6 +149,114 @@ router.get('/youtube/callback', async (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL}/settings?connected=YOUTUBE`);
   } catch (error) {
     logger.error('YouTube OAuth callback error:', error.message);
+    res.redirect(`${process.env.FRONTEND_URL}/settings?error=oauth_failed`);
+  }
+});
+
+// ─── Pinterest OAuth (connexion compte Pinterest) ─────────────────────────
+
+const PT_SCOPES = [
+  'boards:read',
+  'pins:read',
+  'user_accounts:read',
+  'user_accounts:read_followers',
+].join(',');
+
+// Initiation : l'utilisateur clique "Connecter Pinterest"
+router.get('/pinterest', (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.redirect(`${process.env.FRONTEND_URL}/settings?error=no_token`);
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch {
+      return res.redirect(`${process.env.FRONTEND_URL}/settings?error=invalid_token`);
+    }
+
+    if (!process.env.PINTEREST_APP_ID) {
+      return res.redirect(`${process.env.FRONTEND_URL}/settings?error=pinterest_not_configured`);
+    }
+
+    const state = jwt.sign(
+      { userId: decoded.sub, platform: 'PINTEREST' },
+      process.env.JWT_SECRET,
+      { expiresIn: '10m' }
+    );
+
+    const params = new URLSearchParams({
+      client_id: process.env.PINTEREST_APP_ID,
+      redirect_uri: `${process.env.APP_URL}/api/auth/pinterest/callback`,
+      response_type: 'code',
+      scope: PT_SCOPES,
+      state,
+    });
+
+    res.redirect(`https://www.pinterest.com/oauth/?${params}`);
+  } catch (error) {
+    logger.error('Pinterest OAuth init error:', error.message);
+    res.redirect(`${process.env.FRONTEND_URL}/settings?error=oauth_init_failed`);
+  }
+});
+
+// Callback Pinterest → échange le code → sauvegarde dans PlatformAccount
+router.get('/pinterest/callback', async (req, res) => {
+  try {
+    const { code, state, error: oauthError } = req.query;
+
+    if (oauthError) return res.redirect(`${process.env.FRONTEND_URL}/settings?error=access_denied`);
+    if (!code || !state) return res.redirect(`${process.env.FRONTEND_URL}/settings?error=missing_params`);
+
+    let stateData;
+    try {
+      stateData = jwt.verify(state, process.env.JWT_SECRET);
+    } catch {
+      return res.redirect(`${process.env.FRONTEND_URL}/settings?error=invalid_state`);
+    }
+
+    const { userId } = stateData;
+    const redirectUri = `${process.env.APP_URL}/api/auth/pinterest/callback`;
+
+    const tokens = await pinterestService.exchangeCodeForTokens(code, redirectUri);
+    const { access_token, refresh_token, expires_in } = tokens;
+
+    const userAccount = await pinterestService.getUserAccount(access_token);
+    if (!userAccount) {
+      return res.redirect(`${process.env.FRONTEND_URL}/settings?error=no_account`);
+    }
+
+    const expiresAt = expires_in ? new Date(Date.now() + expires_in * 1000) : null;
+
+    await prisma.platformAccount.upsert({
+      where: { userId_platform: { userId, platform: 'PINTEREST' } },
+      update: {
+        accessTokenEnc: encrypt(access_token),
+        refreshTokenEnc: refresh_token ? encrypt(refresh_token) : undefined,
+        tokenExpiresAt: expiresAt,
+        platformUserId: userAccount.platformUserId,
+        platformUsername: userAccount.platformUsername,
+        platformAvatar: userAccount.platformAvatar,
+        followerCount: userAccount.followerCount,
+        isActive: true,
+      },
+      create: {
+        userId,
+        platform: 'PINTEREST',
+        platformUserId: userAccount.platformUserId,
+        platformUsername: userAccount.platformUsername,
+        platformAvatar: userAccount.platformAvatar,
+        followerCount: userAccount.followerCount,
+        accessTokenEnc: encrypt(access_token),
+        refreshTokenEnc: refresh_token ? encrypt(refresh_token) : null,
+        tokenExpiresAt: expiresAt,
+      },
+    });
+
+    logger.info(`Pinterest connecté pour userId=${userId}, compte: ${userAccount.platformUsername}`);
+    res.redirect(`${process.env.FRONTEND_URL}/settings?connected=PINTEREST`);
+  } catch (error) {
+    logger.error('Pinterest OAuth callback error:', error.message);
     res.redirect(`${process.env.FRONTEND_URL}/settings?error=oauth_failed`);
   }
 });

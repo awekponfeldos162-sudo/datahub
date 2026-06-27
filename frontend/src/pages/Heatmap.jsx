@@ -5,7 +5,7 @@ import { useUIStore } from '../store/useStore';
 import EngagementHeatmap from '../components/charts/EngagementHeatmap';
 import { Info } from 'lucide-react';
 
-const PLATFORMS = ['ALL', 'FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT'];
+const PLATFORMS = ['ALL', 'FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT', 'PINTEREST'];
 const METRICS = [
   { value: 'engagement', label: 'Engagements totaux' },
   { value: 'views', label: 'Vues' },

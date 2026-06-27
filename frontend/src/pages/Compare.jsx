@@ -8,7 +8,7 @@ import {
 
 const PLATFORM_COLORS = {
   FACEBOOK: '#1877f2', YOUTUBE: '#ff0000', INSTAGRAM: '#e1306c',
-  TIKTOK: '#010101', SNAPCHAT: '#efb400',
+  TIKTOK: '#010101', SNAPCHAT: '#efb400', PINTEREST: '#e60023',
 };
 
 export default function Compare() {

@@ -4,6 +4,7 @@ const facebookService = require('../services/facebookService');
 const youtubeService = require('../services/youtubeService');
 const instagramService = require('../services/instagramService');
 const tiktokService = require('../services/tiktokService');
+const pinterestService = require('../services/pinterestService');
 const { cacheSet, cacheGet, cacheDel } = require('../config/redis');
 const { logger } = require('../utils/logger');
 
@@ -137,6 +138,23 @@ async function syncPlatform(req, res, next) {
           await prisma.platformAccount.update({
             where: { id: account.id },
             data: { followerCount: userInfo.follower_count || 0, platformUsername: userInfo.display_name },
+          });
+        }
+        break;
+      }
+      case 'PINTEREST': {
+        const userAccount = await pinterestService.getUserAccount(accessToken);
+        const pins = await pinterestService.getPins(accessToken, 25);
+        syncResult = { posts: pins.length, platform: 'PINTEREST', followers: userAccount?.followerCount };
+        await savePosts(account.id, pins);
+        if (userAccount) {
+          await prisma.platformAccount.update({
+            where: { id: account.id },
+            data: {
+              followerCount: userAccount.followerCount || 0,
+              platformUsername: userAccount.platformUsername,
+              platformAvatar: userAccount.platformAvatar,
+            },
           });
         }
         break;

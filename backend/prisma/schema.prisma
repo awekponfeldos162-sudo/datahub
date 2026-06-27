@@ -24,6 +24,7 @@ enum Platform {
   INSTAGRAM
   TIKTOK
   SNAPCHAT
+  PINTEREST
 }
 
 enum ReportFormat {

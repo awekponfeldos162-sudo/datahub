@@ -6,6 +6,7 @@ import {
   Music2, Ghost, CreditCard, LogOut, Flame,
 } from 'lucide-react';
 import { useUIStore, useAuthStore } from '../../store/useStore';
+import PinterestIcon from '../icons/PinterestIcon';
 import clsx from 'clsx';
 
 const PLATFORM_ICONS = {
@@ -14,6 +15,7 @@ const PLATFORM_ICONS = {
   INSTAGRAM: { icon: Instagram, color: '#e1306c', label: 'Instagram' },
   TIKTOK: { icon: Music2, color: '#000000', label: 'TikTok' },
   SNAPCHAT: { icon: Ghost, color: '#fffc00', label: 'Snapchat' },
+  PINTEREST: { icon: PinterestIcon, color: '#e60023', label: 'Pinterest' },
 };
 
 const NAV_ITEMS = [
@@ -26,7 +28,7 @@ const NAV_ITEMS = [
   { to: '/settings', icon: Settings, label: 'Paramètres' },
 ];
 
-const PLATFORMS = ['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT'];
+const PLATFORMS = ['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT', 'PINTEREST'];
 
 export default function Sidebar({ connectedPlatforms = [] }) {
   const { sidebarOpen, toggleSidebar } = useUIStore();

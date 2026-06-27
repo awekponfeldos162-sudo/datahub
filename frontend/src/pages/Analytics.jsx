@@ -13,7 +13,7 @@ import clsx from 'clsx';
 
 const PLATFORM_COLORS = {
   facebook: '#1877f2', youtube: '#ff0000', instagram: '#e1306c',
-  tiktok: '#010101', snapchat: '#fffc00',
+  tiktok: '#010101', snapchat: '#fffc00', pinterest: '#e60023',
 };
 
 export default function Analytics() {

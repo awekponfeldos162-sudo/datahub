@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/useStore';
 import { FileText, Download, Plus, Calendar, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const PLATFORMS = ['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT'];
+const PLATFORMS = ['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT', 'PINTEREST'];
 
 export default function Reports() {
   const { user } = useAuthStore();

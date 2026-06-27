@@ -8,6 +8,7 @@ import {
   XCircle, RefreshCw, Link, Unlink, Save, User, Lock, Shield,
   Smartphone, Eye, EyeOff, Trash2, Download,
 } from 'lucide-react';
+import PinterestIcon from '../components/icons/PinterestIcon';
 
 const PLATFORMS = [
   { id: 'FACEBOOK', label: 'Facebook', icon: Facebook, color: '#1877f2', description: 'Pages, publications, statistiques' },
@@ -15,6 +16,7 @@ const PLATFORMS = [
   { id: 'INSTAGRAM', label: 'Instagram', icon: Instagram, color: '#e1306c', description: 'Posts, stories, reels' },
   { id: 'TIKTOK', label: 'TikTok', icon: Music2, color: '#010101', description: 'Vidéos, likes, abonnés' },
   { id: 'SNAPCHAT', label: 'Snapchat', icon: Ghost, color: '#efb400', description: 'Snapchat Marketing API' },
+  { id: 'PINTEREST', label: 'Pinterest', icon: PinterestIcon, color: '#e60023', description: 'Épingles, tableaux, analytics' },
 ];
 
 export default function Settings() {
@@ -42,15 +44,17 @@ export default function Settings() {
       window.history.replaceState({}, '', '/settings');
     } else if (error) {
       const errorMessages = {
-        access_denied: 'Connexion refusée par Google',
+        access_denied: 'Connexion refusée',
         no_channel: 'Aucune chaîne YouTube trouvée sur ce compte',
+        no_account: 'Aucun compte Pinterest trouvé',
         invalid_token: 'Session expirée, reconnectez-vous',
         youtube_not_configured: 'YouTube API non configurée côté serveur',
+        pinterest_not_configured: 'Pinterest API non configurée côté serveur',
         oauth_failed: 'Erreur lors de la connexion OAuth',
         no_token: 'Token manquant',
         missing_params: 'Paramètres manquants',
         invalid_state: 'État OAuth invalide',
-        oauth_init_failed: 'Erreur d\'initialisation OAuth',
+        oauth_init_failed: "Erreur d'initialisation OAuth",
       };
       toast.error(errorMessages[error] || `Erreur OAuth: ${error}`);
       window.history.replaceState({}, '', '/settings');

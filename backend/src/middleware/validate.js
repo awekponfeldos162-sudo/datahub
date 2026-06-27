@@ -82,7 +82,7 @@ const schemas = {
     title: z.string().min(1).max(200),
     periodStart: z.string().datetime(),
     periodEnd: z.string().datetime(),
-    platforms: z.array(z.enum(['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT'])).min(1),
+    platforms: z.array(z.enum(['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT', 'PINTEREST'])).min(1),
     format: z.enum(['PDF', 'EXCEL']),
   }),
 
