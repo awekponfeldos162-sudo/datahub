@@ -25,11 +25,12 @@ router.post('/reset-password', authLimiter, validate(schemas.resetPassword), aut
 // Google OAuth (connexion compte utilisateur)
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 router.get('/google/callback',
-  passport.authenticate('google', { session: false, failureRedirect: '/login?error=oauth' }),
+  passport.authenticate('google', { session: false, failureRedirect: `${process.env.FRONTEND_URL}/login?error=oauth` }),
   (req, res) => {
     const { generateTokens } = require('../middleware/auth');
     const { accessToken, refreshToken } = generateTokens(req.user.id);
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`);
+    // Hash fragment (#) : non transmis aux serveurs, absent des logs et headers Referer
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback#at=${encodeURIComponent(accessToken)}&rt=${encodeURIComponent(refreshToken)}`);
   }
 );
 

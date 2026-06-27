@@ -1,9 +1,13 @@
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const { generateTokens, verifyRefreshToken } = require('../middleware/auth');
 const { generateSecureToken } = require('../services/cryptoService');
 const { sendVerificationEmail, sendPasswordResetEmail } = require('../services/emailService');
 const { logger } = require('../utils/logger');
+
+// Hash un token avant stockage DB (défense en profondeur si la DB est compromise)
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 12;
@@ -18,14 +22,15 @@ async function register(req, res, next) {
     }
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
-    const verificationToken = generateSecureToken();
+    const verificationToken = generateSecureToken(); // envoyé à l'utilisateur par email
+    const verificationTokenHash = hashToken(verificationToken); // stocké en DB
 
     const user = await prisma.user.create({
       data: {
         email: email.toLowerCase(),
         passwordHash,
         fullName,
-        verificationToken,
+        verificationToken: verificationTokenHash,
       },
       select: { id: true, email: true, fullName: true, plan: true, emailVerified: true, createdAt: true },
     });
@@ -112,7 +117,8 @@ async function verifyEmail(req, res, next) {
   try {
     const { token } = req.params;
 
-    const user = await prisma.user.findFirst({ where: { verificationToken: token } });
+    const tokenHash = hashToken(token);
+    const user = await prisma.user.findFirst({ where: { verificationToken: tokenHash } });
     if (!user) return res.status(400).json({ success: false, message: 'Token de vérification invalide' });
 
     await prisma.user.update({
@@ -132,12 +138,13 @@ async function forgotPassword(req, res, next) {
     const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
 
     if (user) {
-      const resetToken = generateSecureToken();
-      const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000);
+      const resetToken = generateSecureToken(); // 256 bits aléatoires → envoyé à l'utilisateur
+      const resetTokenHash = hashToken(resetToken); // stocké en DB (hachage SHA-256)
+      const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1h
 
       await prisma.user.update({
         where: { id: user.id },
-        data: { resetToken, resetTokenExpiry },
+        data: { resetToken: resetTokenHash, resetTokenExpiry },
       });
 
       await sendPasswordResetEmail(user.email, user.fullName, resetToken);
@@ -153,9 +160,10 @@ async function resetPassword(req, res, next) {
   try {
     const { token, password } = req.body;
 
+    const tokenHash = hashToken(token); // Comparer avec le hash stocké en DB
     const user = await prisma.user.findFirst({
       where: {
-        resetToken: token,
+        resetToken: tokenHash,
         resetTokenExpiry: { gt: new Date() },
       },
     });

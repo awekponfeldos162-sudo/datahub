@@ -10,8 +10,15 @@ export default function AuthCallback() {
   const { login, logout } = useAuthStore();
 
   useEffect(() => {
-    const accessToken = params.get('accessToken');
-    const refreshToken = params.get('refreshToken');
+    // Les tokens arrivent dans le hash fragment (non loggé côté serveur)
+    const hash = window.location.hash.slice(1);
+    const hashParams = new URLSearchParams(hash);
+
+    const accessToken = hashParams.get('at');
+    const refreshToken = hashParams.get('rt');
+    // Compatibilité ancienne méthode (query params) en cas de fallback
+    const legacyAt = params.get('accessToken');
+    const legacyRt = params.get('refreshToken');
     const error = params.get('error');
 
     if (error) {
@@ -20,13 +27,18 @@ export default function AuthCallback() {
       return;
     }
 
-    if (accessToken && refreshToken) {
-      // Temporarily store tokens so interceptor can use them
-      useAuthStore.setState({ accessToken, refreshToken });
+    const at = accessToken || legacyAt;
+    const rt = refreshToken || legacyRt;
+
+    if (at && rt) {
+      // Nettoyer l'URL immédiatement (supprimer le hash avec les tokens)
+      window.history.replaceState(null, '', window.location.pathname);
+
+      useAuthStore.setState({ accessToken: at, refreshToken: rt });
 
       authApi.getProfile()
         .then((res) => {
-          login(res.data, accessToken, refreshToken);
+          login(res.data, at, rt);
           navigate('/dashboard', { replace: true });
         })
         .catch(() => {

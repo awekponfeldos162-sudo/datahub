@@ -1,27 +1,50 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+import { authApi } from '../api/client';
+import { useAuthStore } from '../store/useStore';
 
 export default function PaymentCallback() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const { updateUser } = useAuthStore();
   const [status, setStatus] = useState('loading');
 
   useEffect(() => {
     const txStatus = params.get('status');
     const txRef = params.get('tx_ref') || params.get('transaction_id');
+    const cancelled = txStatus === 'cancelled' || txStatus === 'REFUSED';
 
-    if (txStatus === 'successful' || txStatus === 'ACCEPTED') {
-      setStatus('success');
-      setTimeout(() => navigate('/settings', { replace: true }), 4000);
-    } else if (txStatus === 'cancelled' || txStatus === 'REFUSED') {
+    if (cancelled) {
       setStatus('cancelled');
-    } else if (txRef) {
-      setStatus('success');
-      setTimeout(() => navigate('/settings', { replace: true }), 4000);
-    } else {
-      setStatus('error');
+      return;
     }
+
+    // Ne pas faire confiance au status URL — vérifier le plan réel côté serveur
+    // Le webhook Flutterwave/CinetPay a déjà mis à jour la DB
+    authApi.getProfile()
+      .then((res) => {
+        const plan = res.data?.plan;
+        if (plan && plan !== 'FREE') {
+          // Le plan a bien été mis à jour par le webhook
+          updateUser({ plan });
+          setStatus('success');
+          setTimeout(() => navigate('/settings', { replace: true }), 4000);
+        } else if (txRef) {
+          // Webhook peut prendre quelques secondes — afficher pending
+          setStatus('pending');
+        } else {
+          setStatus('error');
+        }
+      })
+      .catch(() => {
+        // Si non connecté ou erreur réseau, fallback sur l'URL status
+        if (txStatus === 'successful' || txStatus === 'ACCEPTED' || txRef) {
+          setStatus('pending');
+        } else {
+          setStatus('error');
+        }
+      });
   }, []);
 
   return (
@@ -37,8 +60,18 @@ export default function PaymentCallback() {
           <>
             <CheckCircle2 size={48} className="text-green-500 mx-auto mb-4" aria-hidden="true" />
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">Paiement réussi !</h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-6">Votre abonnement est activé. Redirection vers les paramètres…</p>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">Votre abonnement est activé. Redirection…</p>
             <Link to="/dashboard" className="btn-primary">Aller au tableau de bord</Link>
+          </>
+        )}
+        {status === 'pending' && (
+          <>
+            <Loader2 size={48} className="text-primary-800 mx-auto mb-4 animate-spin" aria-hidden="true" />
+            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">Paiement en cours de validation</h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6">
+              Votre paiement est en cours de confirmation. L'abonnement sera activé dans quelques instants.
+            </p>
+            <Link to="/settings" className="btn-primary">Vérifier dans les paramètres</Link>
           </>
         )}
         {status === 'cancelled' && (
