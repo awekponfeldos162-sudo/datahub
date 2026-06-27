@@ -2,12 +2,14 @@ const passport = require('passport');
 const jwt = require('jsonwebtoken');
 
 function authenticate(req, res, next) {
-  passport.authenticate('jwt', { session: false }, (err, user, info) => {
+  passport.authenticate('jwt', { session: false }, (err, user) => {
     if (err) return next(err);
     if (!user) {
+      // Message générique — ne pas exposer les détails internes de Passport
+      // ("No auth token", "jwt expired", "invalid signature", etc.)
       return res.status(401).json({
         success: false,
-        message: info?.message || 'Token invalide ou expiré',
+        message: 'Authentification requise',
       });
     }
     req.user = user;
@@ -29,8 +31,10 @@ function requirePlan(...plans) {
 }
 
 function requireAdmin(req, res, next) {
-  if (req.user?.plan !== 'ENTERPRISE' && req.user?.role !== 'ADMIN') {
-    return res.status(403).json({ success: false, message: 'Accès administrateur requis' });
+  // Seul le champ isAdmin (défini manuellement en DB) donne accès admin
+  // Ne pas se fier au plan tarifaire pour les accès administrateur
+  if (!req.user?.isAdmin) {
+    return res.status(403).json({ success: false, message: 'Accès refusé' });
   }
   next();
 }

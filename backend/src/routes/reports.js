@@ -7,6 +7,6 @@ const reportsController = require('../controllers/reportsController');
 router.use(authenticate);
 
 router.get('/', reportsController.getReportHistory);
-router.post('/generate', requirePlan('STARTER', 'PRO', 'ENTERPRISE'), validate(schemas.generateReport), reportsController.generateReport);
+router.post('/generate', requirePlan('STARTER', 'PRO', 'ENTERPRISE'), validate(schemas.generateReport, 'body', true), reportsController.generateReport);
 
 module.exports = router;

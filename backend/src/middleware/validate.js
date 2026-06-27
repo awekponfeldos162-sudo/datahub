@@ -1,18 +1,44 @@
 const { z } = require('zod');
 
-// Wrap Zod schema into Express middleware
-function validate(schema, source = 'body') {
+// Messages d'erreur génériques par type — ne révèle pas les règles exactes
+const GENERIC_MESSAGES = {
+  email: 'Adresse email invalide',
+  password: 'Mot de passe invalide',
+  currentPassword: 'Mot de passe actuel invalide',
+  newPassword: 'Nouveau mot de passe invalide',
+  fullName: 'Nom invalide',
+  token: 'Token invalide',
+  plan: 'Plan invalide',
+  platforms: 'Plateformes invalides',
+  format: 'Format invalide',
+  title: 'Titre invalide',
+  periodStart: 'Date de début invalide',
+  periodEnd: 'Date de fin invalide',
+  billingCycle: 'Cycle de facturation invalide',
+  paymentMethod: 'Méthode de paiement invalide',
+};
+
+/**
+ * Middleware de validation Zod.
+ * @param {boolean} exposeFields - false = message générique sans détails (routes publiques)
+ */
+function validate(schema, source = 'body', exposeFields = false) {
   return (req, res, next) => {
     const result = schema.safeParse(req[source]);
     if (!result.success) {
-      const errors = result.error.issues.map((i) => ({
-        field: i.path.join('.'),
-        message: i.message,
-      }));
+      if (exposeFields) {
+        // Routes privées (utilisateur connecté) : retourner les détails de champ
+        const errors = result.error.issues.map((i) => ({
+          field: i.path.join('.'),
+          message: i.message,
+        }));
+        return res.status(400).json({ success: false, message: 'Données invalides', errors });
+      }
+
+      // Routes publiques : message générique — ne pas révéler les règles métier
       return res.status(400).json({
         success: false,
         message: 'Données invalides',
-        errors,
       });
     }
     req[source] = result.data;
@@ -23,9 +49,9 @@ function validate(schema, source = 'body') {
 // ─── Schemas ──────────────────────────────────────────────────
 const schemas = {
   register: z.object({
-    email: z.string().email('Email invalide').toLowerCase(),
-    password: z.string().min(8, 'Mot de passe minimum 8 caractères').max(128),
-    fullName: z.string().min(2, 'Nom complet requis').max(100).trim(),
+    email: z.string().email().toLowerCase(),
+    password: z.string().min(8).max(128),
+    fullName: z.string().min(2).max(100).trim(),
   }),
 
   login: z.object({
@@ -34,17 +60,17 @@ const schemas = {
   }),
 
   forgotPassword: z.object({
-    email: z.string().email('Email invalide').toLowerCase(),
+    email: z.string().email().toLowerCase(),
   }),
 
   resetPassword: z.object({
     token: z.string().min(1),
-    password: z.string().min(8, 'Mot de passe minimum 8 caractères').max(128),
+    password: z.string().min(8).max(128),
   }),
 
   changePassword: z.object({
-    currentPassword: z.string().min(1, 'Mot de passe actuel requis'),
-    newPassword: z.string().min(8, 'Nouveau mot de passe minimum 8 caractères').max(128),
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8).max(128),
   }),
 
   updateProfile: z.object({

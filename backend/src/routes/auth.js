@@ -154,8 +154,8 @@ router.get('/youtube/callback', async (req, res) => {
 
 // Protected
 router.get('/profile', authenticate, authController.getProfile);
-router.patch('/profile', authenticate, validate(schemas.updateProfile), authController.updateProfile);
-router.patch('/change-password', authenticate, validate(schemas.changePassword), authController.changePassword);
+router.patch('/profile', authenticate, validate(schemas.updateProfile, 'body', true), authController.updateProfile);
+router.patch('/change-password', authenticate, validate(schemas.changePassword, 'body', true), authController.changePassword);
 router.delete('/account', authenticate, authController.deleteAccount);
 
 // MFA / TOTP

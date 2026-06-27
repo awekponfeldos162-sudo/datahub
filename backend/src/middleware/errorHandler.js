@@ -10,12 +10,11 @@ function errorHandler(err, req, res, next) {
     return res.status(400).json({
       success: false,
       message: 'Données invalides',
-      errors: err.details?.map((d) => d.message) || [err.message],
     });
   }
 
   if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-    return res.status(401).json({ success: false, message: 'Token invalide ou expiré' });
+    return res.status(401).json({ success: false, message: 'Authentification requise' });
   }
 
   if (err.code === 'P2002') {
@@ -29,12 +28,16 @@ function errorHandler(err, req, res, next) {
   const statusCode = err.statusCode || err.status || 500;
   res.status(statusCode).json({
     success: false,
-    message: statusCode === 500 ? 'Erreur interne du serveur' : err.message,
+    // Ne jamais exposer les détails d'erreur interne en production
+    message: statusCode === 500 || process.env.NODE_ENV === 'production'
+      ? 'Une erreur est survenue'
+      : err.message,
   });
 }
 
 function notFoundHandler(req, res) {
-  res.status(404).json({ success: false, message: `Route ${req.method} ${req.path} introuvable` });
+  // Ne pas révéler le chemin exact — évite l'énumération de routes
+  res.status(404).json({ success: false, message: 'Ressource introuvable' });
 }
 
 module.exports = { errorHandler, notFoundHandler };
