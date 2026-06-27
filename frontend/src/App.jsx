@@ -12,7 +12,6 @@ import Insights from './pages/Insights';
 import Settings from './pages/Settings';
 import Pricing from './pages/Pricing';
 import Heatmap from './pages/Heatmap';
-import Admin from './pages/Admin';
 import AuthCallback from './pages/AuthCallback';
 import PaymentCallback from './pages/PaymentCallback';
 import ResetPassword from './pages/ResetPassword';
@@ -56,7 +55,6 @@ export default function App() {
           <Route path="insights" element={<Insights />} />
           <Route path="settings" element={<Settings />} />
           <Route path="heatmap" element={<Heatmap />} />
-          <Route path="admin" element={<Admin />} />
         </Route>
 
         <Route path="*" element={<NotFound />} />

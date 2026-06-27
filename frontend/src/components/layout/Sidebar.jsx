@@ -1,9 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard, BarChart2, GitCompare, FileText, Lightbulb,
+  LayoutDashboard, GitCompare, FileText, Lightbulb,
   Settings, ChevronLeft, ChevronRight, Facebook, Youtube, Instagram,
-  Music2, Ghost, CreditCard, LogOut, Flame, Shield,
+  Music2, Ghost, CreditCard, LogOut, Flame,
 } from 'lucide-react';
 import { useUIStore, useAuthStore } from '../../store/useStore';
 import clsx from 'clsx';
@@ -24,7 +24,6 @@ const NAV_ITEMS = [
   { to: '/insights', icon: Lightbulb, label: 'Recommandations IA' },
   { to: '/pricing', icon: CreditCard, label: 'Plans & Tarifs' },
   { to: '/settings', icon: Settings, label: 'Paramètres' },
-  { to: '/admin', icon: Shield, label: 'Administration', adminOnly: true },
 ];
 
 const PLATFORMS = ['FACEBOOK', 'YOUTUBE', 'INSTAGRAM', 'TIKTOK', 'SNAPCHAT'];
@@ -59,7 +58,7 @@ export default function Sidebar({ connectedPlatforms = [] }) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-thin" aria-label="Navigation principale">
-        {NAV_ITEMS.filter(({ adminOnly }) => !adminOnly || user?.plan === 'ENTERPRISE').map(({ to, icon: Icon, label }) => (
+        {NAV_ITEMS.map(({ to, icon: Icon, label }) => (
           <Link
             key={to}
             to={to}
