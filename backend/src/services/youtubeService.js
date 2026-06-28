@@ -123,4 +123,15 @@ function parseDuration(duration) {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-module.exports = { getChannelStats, getChannelVideos, getVideoAnalytics, getChannelAnalytics, getVideoDailyAnalytics };
+// Rafraîchit le token d'accès Google expiré
+async function refreshAccessToken(refreshToken) {
+  const { data } = await axios.post('https://oauth2.googleapis.com/token', {
+    refresh_token: refreshToken,
+    client_id: process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+    client_secret: process.env.YOUTUBE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+    grant_type: 'refresh_token',
+  });
+  return data; // { access_token, expires_in, token_type }
+}
+
+module.exports = { getChannelStats, getChannelVideos, getVideoAnalytics, getChannelAnalytics, getVideoDailyAnalytics, refreshAccessToken };

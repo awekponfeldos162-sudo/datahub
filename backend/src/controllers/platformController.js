@@ -10,6 +10,36 @@ const { logger } = require('../utils/logger');
 
 const prisma = new PrismaClient();
 
+// Retourne un access token valide pour YouTube — rafraîchit si expiré
+async function getValidYouTubeToken(account) {
+  // Buffer de 5 minutes avant expiration
+  const isExpired = !account.tokenExpiresAt ||
+    new Date(account.tokenExpiresAt) <= new Date(Date.now() + 5 * 60 * 1000);
+
+  if (!isExpired) {
+    return decrypt(account.accessTokenEnc);
+  }
+
+  if (!account.refreshTokenEnc) {
+    throw new Error('Token YouTube expiré — reconnectez votre chaîne dans les paramètres');
+  }
+
+  const refreshToken = decrypt(account.refreshTokenEnc);
+  const newTokens = await youtubeService.refreshAccessToken(refreshToken);
+
+  const expiresAt = new Date(Date.now() + (newTokens.expires_in || 3600) * 1000);
+  await prisma.platformAccount.update({
+    where: { id: account.id },
+    data: {
+      accessTokenEnc: encrypt(newTokens.access_token),
+      tokenExpiresAt: expiresAt,
+    },
+  });
+
+  logger.info(`Token YouTube rafraîchi pour platformAccountId=${account.id}`);
+  return newTokens.access_token;
+}
+
 async function getConnectedPlatforms(req, res, next) {
   try {
     const platforms = await prisma.platformAccount.findMany({
@@ -106,10 +136,11 @@ async function syncPlatform(req, res, next) {
         break;
       }
       case 'YOUTUBE': {
-        const stats = await youtubeService.getChannelStats(accessToken);
-        const videos = await youtubeService.getChannelVideos(accessToken);
+        const ytToken = await getValidYouTubeToken(account);
+        const stats = await youtubeService.getChannelStats(ytToken);
+        const videos = await youtubeService.getChannelVideos(ytToken);
         syncResult = { posts: videos.length, platform: 'YOUTUBE', followers: stats?.followerCount };
-        await saveYouTubePosts(account.id, accessToken, videos);
+        await saveYouTubePosts(account.id, ytToken, videos);
         if (stats) {
           await prisma.platformAccount.update({
             where: { id: account.id },
