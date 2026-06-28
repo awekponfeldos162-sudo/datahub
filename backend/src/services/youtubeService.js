@@ -72,6 +72,33 @@ async function getVideoAnalytics(accessToken, videoId, startDate, endDate) {
   return data.rows || [];
 }
 
+// Retourne les métriques jour par jour pour une vidéo donnée
+async function getVideoDailyAnalytics(accessToken, videoId, startDate, endDate) {
+  const { data } = await axios.get('https://youtubeanalytics.googleapis.com/v2/reports', {
+    params: {
+      ids: 'channel==MINE',
+      startDate,
+      endDate,
+      metrics: 'views,likes,comments,shares,estimatedMinutesWatched',
+      dimensions: 'day',
+      filters: `video==${videoId}`,
+    },
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+
+  if (!data.rows?.length) return [];
+
+  // columns: day, views, likes, comments, shares, estimatedMinutesWatched
+  return data.rows.map(([day, views, likes, comments, shares, watchMinutes]) => ({
+    metricDate: new Date(day),
+    views: views || 0,
+    likes: likes || 0,
+    comments: comments || 0,
+    shares: shares || 0,
+    watchTimeSeconds: Math.round((watchMinutes || 0) * 60),
+  }));
+}
+
 async function getChannelAnalytics(accessToken, startDate, endDate) {
   const { data } = await axios.get('https://youtubeanalytics.googleapis.com/v2/reports', {
     params: {
@@ -96,4 +123,4 @@ function parseDuration(duration) {
   return hours * 3600 + minutes * 60 + seconds;
 }
 
-module.exports = { getChannelStats, getChannelVideos, getVideoAnalytics, getChannelAnalytics };
+module.exports = { getChannelStats, getChannelVideos, getVideoAnalytics, getChannelAnalytics, getVideoDailyAnalytics };

@@ -109,7 +109,7 @@ async function syncPlatform(req, res, next) {
         const stats = await youtubeService.getChannelStats(accessToken);
         const videos = await youtubeService.getChannelVideos(accessToken);
         syncResult = { posts: videos.length, platform: 'YOUTUBE', followers: stats?.followerCount };
-        await savePosts(account.id, videos);
+        await saveYouTubePosts(account.id, accessToken, videos);
         if (stats) {
           await prisma.platformAccount.update({
             where: { id: account.id },
@@ -184,6 +184,56 @@ async function syncPlatform(req, res, next) {
   } catch (error) {
     logger.error(`Erreur sync ${req.params.platform}:`, error.message);
     next(error);
+  }
+}
+
+// Sync YouTube avec métriques quotidiennes via YouTube Analytics API
+async function saveYouTubePosts(platformAccountId, accessToken, videos) {
+  const endDate = new Date().toISOString().split('T')[0];
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  for (const video of videos) {
+    const { views, likes, comments, shares, watchTimeSeconds, ...postData } = video;
+
+    const savedPost = await prisma.post.upsert({
+      where: { platformAccountId_platformPostId: { platformAccountId, platformPostId: video.platformPostId } },
+      update: { title: postData.title, thumbnailUrl: postData.thumbnailUrl, url: postData.url },
+      create: { platformAccountId, ...postData },
+    });
+
+    // Départ : max(date publication, il y a 30j) — YouTube Analytics n'accepte pas de dates futures
+    const publishDate = new Date(video.publishedAt);
+    const startDate = (publishDate > thirtyDaysAgo ? publishDate : thirtyDaysAgo)
+      .toISOString().split('T')[0];
+
+    try {
+      const dailyMetrics = await youtubeService.getVideoDailyAnalytics(
+        accessToken, video.platformPostId, startDate, endDate
+      );
+
+      for (const dm of dailyMetrics) {
+        await prisma.metric.upsert({
+          where: { postId_metricDate: { postId: savedPost.id, metricDate: dm.metricDate } },
+          update: {
+            views: dm.views,
+            likes: dm.likes,
+            comments: dm.comments,
+            shares: dm.shares,
+            watchTimeSeconds: dm.watchTimeSeconds,
+          },
+          create: { postId: savedPost.id, ...dm },
+        });
+      }
+    } catch {
+      // Fallback : totaux actuels sur la date de publication si Analytics API indisponible
+      const metricDate = new Date(video.publishedAt.toDateString());
+      await prisma.metric.upsert({
+        where: { postId_metricDate: { postId: savedPost.id, metricDate } },
+        update: { views: views || 0, likes: likes || 0, comments: comments || 0, shares: shares || 0, watchTimeSeconds: watchTimeSeconds || 0 },
+        create: { postId: savedPost.id, metricDate, views: views || 0, likes: likes || 0, comments: comments || 0, shares: shares || 0, watchTimeSeconds: watchTimeSeconds || 0 },
+      });
+    }
   }
 }
 
