@@ -1,8 +1,8 @@
 # DATAhub — Plateforme d'Analyse Multi-Réseaux Sociaux
 
-**Version 1.0 | Juin 2025 | Confidentiel**
+**Version 1.1 | Juin 2026 | Confidentiel**
 
-Centralisez Facebook, YouTube, Instagram, TikTok et Snapchat dans un seul tableau de bord analytique. Solution conçue pour le marché africain francophone.
+Centralisez Facebook, YouTube, Instagram, TikTok, Snapchat et Pinterest dans un seul tableau de bord analytique. Solution conçue pour le marché africain francophone.
 
 ---
 
@@ -12,6 +12,8 @@ Centralisez Facebook, YouTube, Instagram, TikTok et Snapchat dans un seul tablea
 datahub/
 ├── backend/          Node.js + Express + Prisma + PostgreSQL
 ├── frontend/         React 18 + Vite + Tailwind CSS + Recharts
+├── TACHES.md         Architecture détaillée + liste des tâches
+├── STATUT.md         État actuel du projet + credentials
 ├── DEPLOYMENT.md     Plan de déploiement VPS production
 └── README.md         Ce fichier
 ```
@@ -29,7 +31,7 @@ datahub/
 | Sécurité | AES-256-GCM, bcrypt (cost 12), Helmet.js, CSRF, Rate limiting |
 | Rapports | PDFKit, ExcelJS |
 | Email | Nodemailer / SendGrid |
-| Paiement | Flutterwave (Mobile Money + Cartes) |
+| Paiement | Flutterwave + CinetPay (Mobile Money + Cartes, marché UEMOA) |
 | Infra | VPS Ubuntu 22.04, Nginx, PM2, Let's Encrypt |
 
 ---
@@ -83,20 +85,27 @@ Copiez `backend/.env.example` → `backend/.env` et remplissez :
 | `INSTAGRAM_CLIENT_ID/SECRET` | Instagram Basic Display API |
 | `TIKTOK_CLIENT_KEY/SECRET` | TikTok Display API |
 | `SNAPCHAT_CLIENT_ID/SECRET` | Snapchat Marketing API |
+| `PINTEREST_APP_ID/SECRET` | Pinterest API v5 |
 | `FLUTTERWAVE_SECRET_KEY` | Clé Flutterwave (paiement) |
+| `FLUTTERWAVE_WEBHOOK_SECRET` | Signature webhook Flutterwave |
+| `CINETPAY_API_KEY` | Clé CinetPay (paiement UEMOA) |
+| `CINETPAY_SITE_ID` | Site ID CinetPay |
 | `SMTP_*` | Configuration email |
+| `SENTRY_DSN` | Monitoring erreurs backend |
 
 ---
 
 ## Schéma de base de données
 
 ```
-users (id, email, password_hash, full_name, plan, email_verified, created_at)
-  └── platform_accounts (id, user_id, platform, access_token_enc, refresh_token_enc, token_expires_at)
+users (id, email, password_hash, full_name, plan, email_verified, mfa_enabled, created_at)
+  └── platform_accounts (id, user_id, platform[FACEBOOK|YOUTUBE|INSTAGRAM|TIKTOK|SNAPCHAT|PINTEREST],
+        access_token_enc, refresh_token_enc, token_expires_at, follower_count, last_sync_at)
         └── posts (id, platform_account_id, platform_post_id, type, title, published_at, url)
-              └── metrics (id, post_id, metric_date, views, likes, comments, shares, reach, engagement_rate)
-  └── reports (id, user_id, title, period_start, period_end, platforms, format, file_url, generated_at)
-  └── subscriptions (id, user_id, plan, status, current_period_start, current_period_end, amount)
+              └── metrics (id, post_id, metric_date, views, likes, comments, shares, watch_time_seconds)
+        └── follower_snapshots (id, platform_account_id, follower_count, snapshot_date)
+  └── reports (id, user_id, title, period_start, period_end, platforms[], format, file_url, status)
+  └── subscriptions (id, user_id, plan, payment_provider, amount, currency, current_period_end)
   └── audit_logs (id, user_id, action, resource, ip_address, created_at)
 ```
 
@@ -112,7 +121,9 @@ users (id, email, password_hash, full_name, plan, email_verified, created_at)
 | POST | `/api/auth/refresh` | Rafraîchir le token |
 | GET | `/api/auth/verify/:token` | Vérifier email |
 | POST | `/api/auth/forgot-password` | Mot de passe oublié |
-| GET | `/api/auth/google` | OAuth Google |
+| GET | `/api/auth/google` | OAuth Google (connexion compte) |
+| GET | `/api/auth/youtube` | OAuth YouTube (connexion chaîne) |
+| GET | `/api/auth/pinterest` | OAuth Pinterest (connexion compte) |
 | GET | `/api/auth/profile` | Profil utilisateur |
 
 ### Plateformes
@@ -148,7 +159,9 @@ users (id, email, password_hash, full_name, plan, email_verified, created_at)
 |---------|-------|-------------|
 | GET | `/api/payment/plans` | Plans disponibles |
 | POST | `/api/payment/initialize` | Démarrer paiement |
-| POST | `/api/payment/webhook` | Webhook Flutterwave |
+| POST | `/api/payment/webhook` | Webhook Flutterwave (public) |
+| POST | `/api/payment/webhook-cinetpay` | Webhook CinetPay (public) |
+| POST | `/api/payment/initialize-cinetpay` | Paiement CinetPay |
 
 ---
 
