@@ -17,6 +17,7 @@ import PaymentCallback from './pages/PaymentCallback';
 import ResetPassword from './pages/ResetPassword';
 import VerifyEmail from './pages/VerifyEmail';
 import ForgotPassword from './pages/ForgotPassword';
+import Privacy from './pages/Privacy';
 import NotFound from './pages/NotFound';
 
 function PrivateRoute({ children }) {
@@ -46,6 +47,7 @@ export default function App() {
 
         {/* Pricing accessible without auth */}
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/privacy" element={<Privacy />} />
 
         <Route path="/" element={<PrivateRoute><AppLayout /></PrivateRoute>}>
           <Route path="dashboard" element={<Dashboard />} />
